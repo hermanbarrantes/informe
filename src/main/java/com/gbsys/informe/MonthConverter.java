@@ -8,8 +8,9 @@ import java.util.Map;
 import javafx.util.StringConverter;
 
 /**
+ * Month Converter.
  *
- * @author herman
+ * @author Herman Barrantes
  */
 public class MonthConverter extends StringConverter<Month> {
 

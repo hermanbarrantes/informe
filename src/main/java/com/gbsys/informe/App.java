@@ -2,6 +2,7 @@ package com.gbsys.informe;
 
 import java.io.File;
 import java.time.Month;
+import java.util.Locale;
 import java.util.ResourceBundle;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -27,15 +28,23 @@ import javafx.stage.Stage;
 import javafx.stage.Window;
 
 /**
- * JavaFX App
+ * Main Class.
+ *
+ * @author Herman Barrantes
  */
 public class App extends Application {
 
-    private static final ResourceBundle MESSAGES = ResourceBundle.getBundle("com.gbsys.informe.Messages");
+    private static final ResourceBundle MESSAGES = ResourceBundle.getBundle("com.gbsys.informe.Messages", Locale.getDefault());
     private static final ObservableList<String> REPORTS = FXCollections.observableArrayList("CENDEISSS", "SISA");
+    private final ConfigurationModel configuration = new ConfigurationModel();
 
     public static void main(String[] args) {
         launch();
+    }
+
+    @Override
+    public void init() throws Exception {
+        configuration.load();
     }
 
     @Override
@@ -44,6 +53,11 @@ public class App extends Application {
         primaryStage.setScene(new Scene(createMainPane()));
         primaryStage.setResizable(false);
         primaryStage.show();
+    }
+
+    @Override
+    public void stop() throws Exception {
+        configuration.save();
     }
 
     private Pane createMainPane() {
@@ -62,26 +76,31 @@ public class App extends Application {
         //Nombre
         grid.add(new Label(MESSAGES.getString("name.label")), 0, 0);
         TextField name = new TextField();
+        name.textProperty().bindBidirectional(configuration.nameProperty());
         grid.add(name, 1, 0, 3, 1);
         //Mes
         grid.add(new Label(MESSAGES.getString("month.label")), 0, 1);
         ObservableList<Month> months = FXCollections.observableArrayList(Month.values());
         ComboBox<Month> month = new ComboBox<>(months);
+        month.valueProperty().bindBidirectional(configuration.monthProperty());
         month.setConverter(new MonthConverter());
-        month.setValue(Month.JANUARY);
         grid.add(month, 1, 1);
         //Reporte
         grid.add(new Label(MESSAGES.getString("report.label")), 2, 1);
 
         ComboBox<String> report = new ComboBox<>(REPORTS);
-        report.setValue("SISA");
+        report.valueProperty().bindBidirectional(configuration.reportProperty());
         grid.add(report, 3, 1);
         //Observaciones
         grid.add(new Label(MESSAGES.getString("observation.label")), 0, 2);
-        TextArea observations = new TextArea(MESSAGES.getString("observation.placeholder"));
-        observations.setPrefColumnCount(30);
-        observations.setPrefRowCount(5);
-        grid.add(observations, 1, 2, 3, 1);
+        TextArea observation = new TextArea();
+        observation.textProperty().bindBidirectional(configuration.observationProperty());
+        if (configuration.getObservation().isBlank()) {
+            configuration.setObservation(MESSAGES.getString("observation.placeholder"));
+        }
+        observation.setPrefColumnCount(30);
+        observation.setPrefRowCount(5);
+        grid.add(observation, 1, 2, 3, 1);
 
         return grid;
     }
@@ -115,7 +134,7 @@ public class App extends Application {
                         MESSAGES.getString("openfile.csv.extension"))
         );
         File openFile = openFileChooser.showOpenDialog(currentStage);
-        
+
         FileChooser saveFileChooser = new FileChooser();
         saveFileChooser.setTitle(MESSAGES.getString("savefile.title"));
         saveFileChooser.getExtensionFilters().addAll(
